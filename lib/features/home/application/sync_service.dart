@@ -31,11 +31,13 @@ class SyncService {
       // 1. Sync Profile
       // Normally we would do: await _supabase.client.from('profiles').select().eq('id', clientId);
       // For this sprint, we mock the API response and upsert to Drift.
+      final user = _supabase.client.auth.currentUser;
       final profile = ClientProfile(
         id: clientId,
-        name: 'ArLABS Client',
-        email: _supabase.client.auth.currentUser?.email ?? 'client@arlabs.id',
-        phone: '+6281234567890',
+        name: 'Client ArLABS',
+        email: user?.email ?? '',
+        phone: user?.phone ?? '+6281234567890',
+        status: 'approved', // Dummy status for synced profile
         updatedAt: DateTime.now(),
       );
       await _db.into(_db.clientProfiles).insertOnConflictUpdate(profile);

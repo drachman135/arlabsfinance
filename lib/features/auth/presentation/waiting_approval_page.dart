@@ -9,7 +9,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_dimensions.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/providers/app_providers.dart';
-import '../viewmodels/auth_viewmodel.dart';
+import 'viewmodels/auth_viewmodel.dart';
 
 class WaitingApprovalPage extends ConsumerStatefulWidget {
   const WaitingApprovalPage({super.key});
