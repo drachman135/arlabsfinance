@@ -34,6 +34,7 @@ class AppDatabase extends _$AppDatabase {
       name: AppConstants.databaseName,
       web: DriftWebOptions(
         sqlite3Wasm: Uri.parse('sqlite3.wasm'),
+        driftWorker: Uri.parse('drift_worker.js'),
         onResult: (result) {
           if (result.missingFeatures.isNotEmpty) {
             // Log missing features
