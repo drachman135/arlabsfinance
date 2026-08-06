@@ -23,12 +23,16 @@ class DashboardPage extends ConsumerWidget {
     final profile = state.profile;
     final summary = state.summary;
 
+    final authUser = ref.watch(authUserProvider);
+    
     // Redirect to waiting approval if status is pending
     if (profile?.status == 'pending') {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         context.go(RoutePaths.waitingApproval);
       });
     }
+
+    final displayName = profile?.name ?? authUser?.email ?? 'Klien';
 
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
@@ -39,7 +43,7 @@ class DashboardPage extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Halo, ${profile?.name ?? 'Klien'}',
+                  'Halo, $displayName',
                   style: AppTextStyles.headingSmall,
                 ),
                 Row(

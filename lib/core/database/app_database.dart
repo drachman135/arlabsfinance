@@ -30,7 +30,18 @@ class AppDatabase extends _$AppDatabase {
   /// Opens a cross-platform database connection.
   /// drift_flutter handles native vs web automatically.
   static QueryExecutor _openConnection() {
-    return driftDatabase(name: AppConstants.databaseName);
+    return driftDatabase(
+      name: AppConstants.databaseName,
+      web: DriftWebOptions(
+        sqlite3Wasm: Uri.parse('sqlite3.wasm'),
+        driftWorker: null,
+        onResult: (result) {
+          if (result.missingFeatures.isNotEmpty) {
+            // Log missing features
+          }
+        },
+      ),
+    );
   }
 
   @override
