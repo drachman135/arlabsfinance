@@ -23,5 +23,5 @@ class RoutePaths {
   static const String register = '/register';
   static const String waitingApproval = '/waiting-approval';
   static const String chatList = '/chat';
-  static const String chatRoom = 'room/:id';
+  static const String chatRoom = ':id';
 }

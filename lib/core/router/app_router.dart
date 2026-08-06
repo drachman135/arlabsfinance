@@ -20,7 +20,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     navigatorKey: GlobalKey<NavigatorState>(debugLabel: 'root'),
-    initialLocation: RoutePaths.splash,
+    initialLocation: RoutePaths.dashboard,
     debugLogDiagnostics: true,
     redirect: (context, state) {
       final isAuth = authState?.session != null;
@@ -28,19 +28,20 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isLogin = state.matchedLocation == RoutePaths.login;
 
       final isRegister = state.matchedLocation == RoutePaths.register;
-      final isWaitingApproval = state.matchedLocation == RoutePaths.waitingApproval;
 
-      // Splash page handles its own navigation via Future.delayed.
-      if (isSplash) return null;
-
-      // If not authenticated and not on login or register page, redirect to login
-      if (!isAuth && !isLogin && !isRegister) {
-        return RoutePaths.login;
+      // If not authenticated:
+      if (!isAuth) {
+        // If they are on Login, Register, or Splash, let them stay
+        if (isLogin || isRegister || isSplash) {
+          return null;
+        }
+        // Otherwise, redirect to Splash to show branding before Login
+        return RoutePaths.splash;
       }
 
-      // If authenticated and trying to access login/register, redirect to dashboard
-      // Note: We don't block access to waiting room here. Status check happens in Dashboard.
-      if (isAuth && (isLogin || isRegister)) {
+      // If authenticated:
+      // If trying to access Login, Register, or Splash, redirect to Dashboard
+      if (isLogin || isRegister || isSplash) {
         return RoutePaths.dashboard;
       }
 

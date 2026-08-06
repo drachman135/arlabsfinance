@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_card.dart';
+import '../../../../core/router/route_names.dart';
 import '../viewmodels/chat_list_viewmodel.dart';
 
 class ChatListPage extends ConsumerWidget {
@@ -51,7 +52,11 @@ class ChatListPage extends ConsumerWidget {
                 borderColor: AppColors.border,
                 margin: const EdgeInsets.only(bottom: 8),
                 onTap: () {
-                  context.push('/chat/${room.id}', extra: room);
+                  context.pushNamed(
+                    RouteNames.chatRoom,
+                    pathParameters: {'id': room.id},
+                    extra: room,
+                  );
                 },
                 child: Row(
                   children: [

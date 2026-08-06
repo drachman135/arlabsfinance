@@ -97,7 +97,8 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
           ],
         ),
         backgroundColor: AppColors.surface,
-        elevation: 1,
+        elevation: 0,
+        shape: const Border(bottom: BorderSide(color: AppColors.border, width: 1)),
       ),
       body: Center(
         child: ConstrainedBox(
@@ -134,11 +135,18 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isMe ? AppColors.primaryDark : AppColors.surfaceElevated,
-          borderRadius: BorderRadius.circular(16).copyWith(
-            bottomRight: isMe ? const Radius.circular(0) : null,
-            bottomLeft: !isMe ? const Radius.circular(0) : null,
+          color: isMe ? AppColors.primary : AppColors.surfaceLight,
+          borderRadius: BorderRadius.circular(20).copyWith(
+            bottomRight: isMe ? const Radius.circular(4) : null,
+            bottomLeft: !isMe ? const Radius.circular(4) : null,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         constraints: BoxConstraints(
           maxWidth: MediaQuery.of(context).size.width * 0.75,
@@ -184,39 +192,63 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
 
   Widget _buildMessageInput() {
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
         color: AppColors.surface,
-        border: Border(top: BorderSide(color: AppColors.border)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            offset: const Offset(0, -4),
+            blurRadius: 16,
+          ),
+        ],
       ),
       child: SafeArea(
         child: Row(
           children: [
+            IconButton(
+              icon: const Icon(Icons.attach_file, color: AppColors.textTertiary),
+              onPressed: () {},
+            ),
             Expanded(
               child: TextField(
                 controller: _messageController,
                 style: AppTextStyles.bodyMedium,
                 decoration: InputDecoration(
-                  hintText: 'Ketik pesan...',
+                  hintText: 'Ketik pesan Anda...',
                   hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textTertiary),
                   filled: true,
-                  fillColor: AppColors.surfaceElevated,
+                  fillColor: AppColors.backgroundDark,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(24),
-                    borderSide: BorderSide.none,
+                    borderSide: const BorderSide(color: AppColors.border),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: const BorderSide(color: AppColors.border),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: const BorderSide(color: AppColors.primary),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                 ),
                 textInputAction: TextInputAction.send,
                 onSubmitted: (_) => _sendMessage(),
               ),
             ),
             const SizedBox(width: 8),
-            CircleAvatar(
-              backgroundColor: AppColors.primary,
-              radius: 24,
+            Container(
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [AppColors.primaryLight, AppColors.primary],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
               child: IconButton(
-                icon: const Icon(Icons.send, color: Colors.white),
+                icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
                 onPressed: _sendMessage,
               ),
             ),

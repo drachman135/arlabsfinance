@@ -7,7 +7,9 @@ import '../../../core/theme/app_dimensions.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/router/route_names.dart';
+import 'package:uuid/uuid.dart';
 import '../../auth/presentation/viewmodels/auth_viewmodel.dart';
+import '../../chat/domain/entities/chat_room.dart';
 import '../../chat/presentation/viewmodels/chat_list_viewmodel.dart';
 import 'viewmodels/dashboard_viewmodel.dart';
 
@@ -23,8 +25,6 @@ class DashboardPage extends ConsumerWidget {
     final profile = state.profile;
     final summary = state.summary;
 
-    final authUser = ref.watch(authUserProvider);
-    
     // Redirect to waiting approval if status is pending
     if (profile?.status == 'pending') {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -142,7 +142,28 @@ class DashboardPage extends ConsumerWidget {
                     return Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        _buildMenuIcon(Icons.chat, 'Pesan', onTap: () => context.push(RoutePaths.chatList)),
+                        _buildMenuIcon(
+                          Icons.chat, 
+                          'Pesan', 
+                          onTap: () {
+                            if (chatList.isNotEmpty) {
+                              final room = chatList.first;
+                              context.push('${RoutePaths.chatList}/${room.id}', extra: room);
+                            } else {
+                              if (profile != null) {
+                                final dummyRoom = ChatRoom(
+                                  id: const Uuid().v4(),
+                                  clientId: profile.id,
+                                  ownerId: 'admin',
+                                  ownerName: 'Admin',
+                                );
+                                context.push('${RoutePaths.chatList}/${dummyRoom.id}', extra: dummyRoom);
+                              } else {
+                                context.push(RoutePaths.chatList);
+                              }
+                            }
+                          },
+                        ),
                         if (totalUnread > 0)
                           Positioned(
                             top: -4,

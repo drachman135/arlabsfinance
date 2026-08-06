@@ -1,4 +1,4 @@
-package com.ardevlabs.arlabs_finance_client
+package com.ardevlabs.finance.client
 
 import io.flutter.embedding.android.FlutterActivity
 
