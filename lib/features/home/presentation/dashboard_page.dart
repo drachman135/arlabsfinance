@@ -23,6 +23,13 @@ class DashboardPage extends ConsumerWidget {
     final profile = state.profile;
     final summary = state.summary;
 
+    // Redirect to waiting approval if status is pending
+    if (profile?.status == 'pending') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        context.go(RoutePaths.waitingApproval);
+      });
+    }
+
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,
       appBar: AppBar(
@@ -68,8 +75,11 @@ class DashboardPage extends ConsumerWidget {
       ),
       body: RefreshIndicator(
         onRefresh: () => ref.read(dashboardViewModelProvider.notifier).refresh(),
-        child: ListView(
-          padding: const EdgeInsets.all(AppDimensions.paddingLarge),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 600),
+            child: ListView(
+              padding: const EdgeInsets.all(AppDimensions.paddingLarge),
           children: [
             // Financial Summary Card
             AppCard(
@@ -210,7 +220,9 @@ class DashboardPage extends ConsumerWidget {
             }),
           ],
         ),
+       ),
       ),
+     ),
     );
   }
 

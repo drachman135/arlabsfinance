@@ -4,6 +4,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 abstract class AuthRepository {
   /// Sign in with email and password.
   Future<AuthResponse> loginWithEmail(String email, String password);
+
+  /// Register new user.
+  Future<AuthResponse> registerWithEmail(String email, String password, String name);
   
   /// Sign out the current user.
   Future<void> logout();

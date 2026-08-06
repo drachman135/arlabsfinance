@@ -43,6 +43,29 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<sb.AuthResponse> registerWithEmail(String email, String password, String name) async {
+    try {
+      final response = await _authClient.signUp(
+        email: email,
+        password: password,
+        data: {
+          'name': name,
+        },
+      );
+      
+      return response;
+    } on sb.AuthException catch (e) {
+      throw AuthException(
+        message: e.message,
+      );
+    } catch (e) {
+      throw const UnknownException(
+        message: 'An unexpected error occurred during registration',
+      );
+    }
+  }
+
+  @override
   Future<void> logout() async {
     try {
       await _authClient.signOut();

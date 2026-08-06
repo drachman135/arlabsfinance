@@ -33,8 +33,11 @@ class ChatListPage extends ConsumerWidget {
             );
           }
           
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
             itemCount: rooms.length,
             itemBuilder: (context, index) {
               final room = rooms[index];
@@ -111,7 +114,9 @@ class ChatListPage extends ConsumerWidget {
                 ),
               );
             },
-          );
+           ),
+          ),
+         );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(

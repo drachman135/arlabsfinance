@@ -45,6 +45,16 @@ class $ClientProfilesTable extends ClientProfiles
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('pending'),
+  );
   static const VerificationMeta _updatedAtMeta = const VerificationMeta(
     'updatedAt',
   );
@@ -57,7 +67,14 @@ class $ClientProfilesTable extends ClientProfiles
     requiredDuringInsert: false,
   );
   @override
-  List<GeneratedColumn> get $columns => [id, name, email, phone, updatedAt];
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    email,
+    phone,
+    status,
+    updatedAt,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -97,6 +114,12 @@ class $ClientProfilesTable extends ClientProfiles
         phone.isAcceptableOrUnknown(data['phone']!, _phoneMeta),
       );
     }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    }
     if (data.containsKey('updated_at')) {
       context.handle(
         _updatedAtMeta,
@@ -128,6 +151,10 @@ class $ClientProfilesTable extends ClientProfiles
         DriftSqlType.string,
         data['${effectivePrefix}phone'],
       ),
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
       updatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
@@ -146,12 +173,14 @@ class ClientProfile extends DataClass implements Insertable<ClientProfile> {
   final String name;
   final String email;
   final String? phone;
+  final String status;
   final DateTime? updatedAt;
   const ClientProfile({
     required this.id,
     required this.name,
     required this.email,
     this.phone,
+    required this.status,
     this.updatedAt,
   });
   @override
@@ -163,6 +192,7 @@ class ClientProfile extends DataClass implements Insertable<ClientProfile> {
     if (!nullToAbsent || phone != null) {
       map['phone'] = Variable<String>(phone);
     }
+    map['status'] = Variable<String>(status);
     if (!nullToAbsent || updatedAt != null) {
       map['updated_at'] = Variable<DateTime>(updatedAt);
     }
@@ -177,6 +207,7 @@ class ClientProfile extends DataClass implements Insertable<ClientProfile> {
       phone: phone == null && nullToAbsent
           ? const Value.absent()
           : Value(phone),
+      status: Value(status),
       updatedAt: updatedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(updatedAt),
@@ -193,6 +224,7 @@ class ClientProfile extends DataClass implements Insertable<ClientProfile> {
       name: serializer.fromJson<String>(json['name']),
       email: serializer.fromJson<String>(json['email']),
       phone: serializer.fromJson<String?>(json['phone']),
+      status: serializer.fromJson<String>(json['status']),
       updatedAt: serializer.fromJson<DateTime?>(json['updatedAt']),
     );
   }
@@ -204,6 +236,7 @@ class ClientProfile extends DataClass implements Insertable<ClientProfile> {
       'name': serializer.toJson<String>(name),
       'email': serializer.toJson<String>(email),
       'phone': serializer.toJson<String?>(phone),
+      'status': serializer.toJson<String>(status),
       'updatedAt': serializer.toJson<DateTime?>(updatedAt),
     };
   }
@@ -213,12 +246,14 @@ class ClientProfile extends DataClass implements Insertable<ClientProfile> {
     String? name,
     String? email,
     Value<String?> phone = const Value.absent(),
+    String? status,
     Value<DateTime?> updatedAt = const Value.absent(),
   }) => ClientProfile(
     id: id ?? this.id,
     name: name ?? this.name,
     email: email ?? this.email,
     phone: phone.present ? phone.value : this.phone,
+    status: status ?? this.status,
     updatedAt: updatedAt.present ? updatedAt.value : this.updatedAt,
   );
   ClientProfile copyWithCompanion(ClientProfilesCompanion data) {
@@ -227,6 +262,7 @@ class ClientProfile extends DataClass implements Insertable<ClientProfile> {
       name: data.name.present ? data.name.value : this.name,
       email: data.email.present ? data.email.value : this.email,
       phone: data.phone.present ? data.phone.value : this.phone,
+      status: data.status.present ? data.status.value : this.status,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
   }
@@ -238,13 +274,14 @@ class ClientProfile extends DataClass implements Insertable<ClientProfile> {
           ..write('name: $name, ')
           ..write('email: $email, ')
           ..write('phone: $phone, ')
+          ..write('status: $status, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, name, email, phone, updatedAt);
+  int get hashCode => Object.hash(id, name, email, phone, status, updatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -253,6 +290,7 @@ class ClientProfile extends DataClass implements Insertable<ClientProfile> {
           other.name == this.name &&
           other.email == this.email &&
           other.phone == this.phone &&
+          other.status == this.status &&
           other.updatedAt == this.updatedAt);
 }
 
@@ -261,6 +299,7 @@ class ClientProfilesCompanion extends UpdateCompanion<ClientProfile> {
   final Value<String> name;
   final Value<String> email;
   final Value<String?> phone;
+  final Value<String> status;
   final Value<DateTime?> updatedAt;
   final Value<int> rowid;
   const ClientProfilesCompanion({
@@ -268,6 +307,7 @@ class ClientProfilesCompanion extends UpdateCompanion<ClientProfile> {
     this.name = const Value.absent(),
     this.email = const Value.absent(),
     this.phone = const Value.absent(),
+    this.status = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -276,6 +316,7 @@ class ClientProfilesCompanion extends UpdateCompanion<ClientProfile> {
     required String name,
     required String email,
     this.phone = const Value.absent(),
+    this.status = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -286,6 +327,7 @@ class ClientProfilesCompanion extends UpdateCompanion<ClientProfile> {
     Expression<String>? name,
     Expression<String>? email,
     Expression<String>? phone,
+    Expression<String>? status,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
   }) {
@@ -294,6 +336,7 @@ class ClientProfilesCompanion extends UpdateCompanion<ClientProfile> {
       if (name != null) 'name': name,
       if (email != null) 'email': email,
       if (phone != null) 'phone': phone,
+      if (status != null) 'status': status,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
     });
@@ -304,6 +347,7 @@ class ClientProfilesCompanion extends UpdateCompanion<ClientProfile> {
     Value<String>? name,
     Value<String>? email,
     Value<String?>? phone,
+    Value<String>? status,
     Value<DateTime?>? updatedAt,
     Value<int>? rowid,
   }) {
@@ -312,6 +356,7 @@ class ClientProfilesCompanion extends UpdateCompanion<ClientProfile> {
       name: name ?? this.name,
       email: email ?? this.email,
       phone: phone ?? this.phone,
+      status: status ?? this.status,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
     );
@@ -332,6 +377,9 @@ class ClientProfilesCompanion extends UpdateCompanion<ClientProfile> {
     if (phone.present) {
       map['phone'] = Variable<String>(phone.value);
     }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
@@ -348,6 +396,7 @@ class ClientProfilesCompanion extends UpdateCompanion<ClientProfile> {
           ..write('name: $name, ')
           ..write('email: $email, ')
           ..write('phone: $phone, ')
+          ..write('status: $status, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -2310,6 +2359,7 @@ typedef $$ClientProfilesTableCreateCompanionBuilder =
       required String name,
       required String email,
       Value<String?> phone,
+      Value<String> status,
       Value<DateTime?> updatedAt,
       Value<int> rowid,
     });
@@ -2319,6 +2369,7 @@ typedef $$ClientProfilesTableUpdateCompanionBuilder =
       Value<String> name,
       Value<String> email,
       Value<String?> phone,
+      Value<String> status,
       Value<DateTime?> updatedAt,
       Value<int> rowid,
     });
@@ -2349,6 +2400,11 @@ class $$ClientProfilesTableFilterComposer
 
   ColumnFilters<String> get phone => $composableBuilder(
     column: $table.phone,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2387,6 +2443,11 @@ class $$ClientProfilesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
@@ -2413,6 +2474,9 @@ class $$ClientProfilesTableAnnotationComposer
 
   GeneratedColumn<String> get phone =>
       $composableBuilder(column: $table.phone, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
@@ -2455,6 +2519,7 @@ class $$ClientProfilesTableTableManager
                 Value<String> name = const Value.absent(),
                 Value<String> email = const Value.absent(),
                 Value<String?> phone = const Value.absent(),
+                Value<String> status = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ClientProfilesCompanion(
@@ -2462,6 +2527,7 @@ class $$ClientProfilesTableTableManager
                 name: name,
                 email: email,
                 phone: phone,
+                status: status,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),
@@ -2471,6 +2537,7 @@ class $$ClientProfilesTableTableManager
                 required String name,
                 required String email,
                 Value<String?> phone = const Value.absent(),
+                Value<String> status = const Value.absent(),
                 Value<DateTime?> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ClientProfilesCompanion.insert(
@@ -2478,6 +2545,7 @@ class $$ClientProfilesTableTableManager
                 name: name,
                 email: email,
                 phone: phone,
+                status: status,
                 updatedAt: updatedAt,
                 rowid: rowid,
               ),

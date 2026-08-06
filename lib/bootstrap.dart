@@ -1,3 +1,4 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -38,6 +39,14 @@ Future<void> bootstrap(AppEnvironment environment) async {
 
   // 4. Error Handler
   ErrorHandler.init();
+
+  // 4.5 Firebase
+  try {
+    await Firebase.initializeApp();
+    AppLogger.info('Firebase initialized successfully');
+  } catch (e) {
+    AppLogger.warning('Firebase initialization skipped (missing google-services.json / options)');
+  }
 
   // 5. Supabase
   await SupabaseService.instance.init();

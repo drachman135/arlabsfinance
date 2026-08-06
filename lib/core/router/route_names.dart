@@ -7,6 +7,8 @@ class RouteNames {
   static const String splash = 'splash';
   static const String login = 'login';
   static const String dashboard = 'dashboard';
+  static const String register = 'register';
+  static const String waitingApproval = 'waitingApproval';
   static const String chatList = 'chatList';
   static const String chatRoom = 'chatRoom';
 }
@@ -18,6 +20,8 @@ class RoutePaths {
   static const String splash = '/';
   static const String login = '/login';
   static const String dashboard = '/dashboard';
+  static const String register = '/register';
+  static const String waitingApproval = '/waiting-approval';
   static const String chatList = '/chat';
   static const String chatRoom = 'room/:id';
 }

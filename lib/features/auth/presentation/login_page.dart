@@ -86,7 +86,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           child: Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(AppDimensions.paddingXLarge),
-              child: Form(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 400),
+                child: Form(
                 key: _formKey,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -191,15 +193,35 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     const SizedBox(height: AppDimensions.spacing24),
 
                     // Register hint (As per requirements: Accounts created by owner)
-                    Text(
-                      'Belum punya akun?\nSilakan hubungi perwakilan ArLABS Anda.',
-                      style: AppTextStyles.labelMedium.copyWith(
-                        color: AppColors.textTertiary,
+                    TextButton(
+                      onPressed: () => context.push(RoutePaths.register),
+                      child: Text(
+                        'Belum punya akun? Daftar sekarang.',
+                        style: AppTextStyles.labelMedium.copyWith(
+                          color: AppColors.primary,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
+                    ),
+                    
+                    const SizedBox(height: AppDimensions.spacing32),
+                    const Divider(),
+                    
+                    TextButton(
+                      onPressed: () {
+                        // Dummy Dev Login
+                        ref.read(authViewModelProvider.notifier).login('dev@test.com', 'developer123');
+                      },
+                      child: Text(
+                        'DEV: Auto Login as Dummy',
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.textTertiary,
+                        ),
+                      ),
                     ),
                   ],
                 ),
+              ),
               ),
             ),
           ),

@@ -99,8 +99,11 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
         backgroundColor: AppColors.surface,
         elevation: 1,
       ),
-      body: Column(
-        children: [
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: Column(
+            children: [
           Expanded(
             child: ListView.builder(
               reverse: true,
@@ -115,7 +118,9 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
             ),
           ),
           _buildMessageInput(),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }

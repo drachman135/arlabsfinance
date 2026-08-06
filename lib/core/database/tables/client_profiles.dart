@@ -6,6 +6,7 @@ class ClientProfiles extends Table {
   TextColumn get name => text()();
   TextColumn get email => text()();
   TextColumn get phone => text().nullable()();
+  TextColumn get status => text().withDefault(const Constant('pending'))();
   DateTimeColumn get updatedAt => dateTime().nullable()();
 
   @override

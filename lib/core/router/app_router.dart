@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/viewmodels/auth_viewmodel.dart';
+import '../../features/auth/presentation/register_page.dart';
+import '../../features/auth/presentation/waiting_approval_page.dart';
 import '../../features/chat/presentation/pages/chat_list_page.dart';
 import '../../features/chat/presentation/pages/chat_room_page.dart';
 import '../../features/chat/domain/entities/chat_room.dart';
@@ -25,22 +27,36 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isSplash = state.matchedLocation == RoutePaths.splash;
       final isLogin = state.matchedLocation == RoutePaths.login;
 
+      final isRegister = state.matchedLocation == RoutePaths.register;
+      final isWaitingApproval = state.matchedLocation == RoutePaths.waitingApproval;
+
       // Splash page handles its own navigation via Future.delayed.
       if (isSplash) return null;
 
-      // If not authenticated and not on login page, redirect to login
-      if (!isAuth && !isLogin) {
+      // If not authenticated and not on login or register page, redirect to login
+      if (!isAuth && !isLogin && !isRegister) {
         return RoutePaths.login;
       }
 
-      // If authenticated and trying to access login, redirect to dashboard
-      if (isAuth && isLogin) {
+      // If authenticated and trying to access login/register, redirect to dashboard
+      // Note: We don't block access to waiting room here. Status check happens in Dashboard.
+      if (isAuth && (isLogin || isRegister)) {
         return RoutePaths.dashboard;
       }
 
       return null;
     },
     routes: [
+      GoRoute(
+        path: RoutePaths.register,
+        name: RouteNames.register,
+        builder: (context, state) => const RegisterPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.waitingApproval,
+        name: RouteNames.waitingApproval,
+        builder: (context, state) => const WaitingApprovalPage(),
+      ),
       GoRoute(
         path: RoutePaths.splash,
         name: RouteNames.splash,
