@@ -49,8 +49,8 @@ class AuthViewModel extends AsyncNotifier<void> {
           try {
             await repository.registerWithEmail(email, password, 'Developer Klien');
             await repository.loginWithEmail(email, password);
-          } catch (_) {
-            throw Exception('Gagal membuat akun dummy. Pastikan internet aktif.');
+          } catch (err) {
+            throw Exception('Gagal membuat akun dummy: $err\n(Pastikan Anda telah mematikan "Confirm email" di Supabase)');
           }
         }
         return;
