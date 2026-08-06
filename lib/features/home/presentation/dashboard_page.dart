@@ -32,7 +32,7 @@ class DashboardPage extends ConsumerWidget {
       });
     }
 
-    final displayName = profile?.name ?? authUser?.email ?? 'Klien';
+    final displayName = profile?.name != null && profile!.name.isNotEmpty ? profile.name : 'Klien';
 
     return Scaffold(
       backgroundColor: AppColors.backgroundDark,

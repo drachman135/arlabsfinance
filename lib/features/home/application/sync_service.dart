@@ -29,15 +29,28 @@ class SyncService {
       AppLogger.info('Starting sync for client: $clientId');
       
       // 1. Sync Profile
-      // Normally we would do: await _supabase.client.from('profiles').select().eq('id', clientId);
-      // For this sprint, we mock the API response and upsert to Drift.
       final user = _supabase.client.auth.currentUser;
+      
+      // Fetch from Supabase
+      final profileResponse = await _supabase.client
+          .from('client_profiles')
+          .select()
+          .eq('id', clientId)
+          .maybeSingle();
+          
+      String clientName = '';
+      String clientStatus = 'approved';
+      if (profileResponse != null) {
+        if (profileResponse['name'] != null) clientName = profileResponse['name'] as String;
+        if (profileResponse['status'] != null) clientStatus = profileResponse['status'] as String;
+      }
+
       final profile = ClientProfile(
         id: clientId,
-        name: 'Client ArLABS',
+        name: clientName,
         email: user?.email ?? '',
         phone: user?.phone ?? '+6281234567890',
-        status: 'approved', // Dummy status for synced profile
+        status: clientStatus,
         updatedAt: DateTime.now(),
       );
       await _db.into(_db.clientProfiles).insertOnConflictUpdate(profile);
@@ -76,6 +89,19 @@ class SyncService {
       
       await _db.into(_db.recentTransactions).insertOnConflictUpdate(txn1);
       await _db.into(_db.recentTransactions).insertOnConflictUpdate(txn2);
+      
+      // 4. Sync Mock Chat Room
+      await _db.into(_db.chatRooms).insertOnConflictUpdate(
+        ChatRoomTableData(
+          id: 'dummy_room_1',
+          clientId: clientId,
+          ownerId: 'owner_1',
+          ownerName: 'Admin ArLABS',
+          lastMessage: 'Halo! Ada yang bisa kami bantu?',
+          lastMessageTime: DateTime.now().subtract(const Duration(minutes: 5)),
+          unreadCount: 1,
+        )
+      );
 
       AppLogger.info('Sync completed successfully');
     } catch (e) {
