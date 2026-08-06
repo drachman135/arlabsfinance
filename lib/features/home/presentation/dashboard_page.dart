@@ -32,7 +32,7 @@ class DashboardPage extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Halo, ${profile?.name ?? 'Client'}',
+                  'Halo, ${profile?.name ?? 'Klien'}',
                   style: AppTextStyles.headingSmall,
                 ),
                 Row(
@@ -46,7 +46,7 @@ class DashboardPage extends ConsumerWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      state.isSyncing ? 'Syncing...' : 'Updated recently',
+                      state.isSyncing ? 'Sedang Sinkronisasi...' : 'Baru saja diperbarui',
                       style: AppTextStyles.labelSmall.copyWith(
                         color: AppColors.textTertiary,
                       ),
@@ -112,14 +112,14 @@ class DashboardPage extends ConsumerWidget {
             const SizedBox(height: AppDimensions.spacing24),
 
             // Quick Menu
-            Text('Quick Menu', style: AppTextStyles.headingMedium),
+            Text('Menu Cepat', style: AppTextStyles.headingMedium),
             const SizedBox(height: AppDimensions.spacing16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildMenuIcon(Icons.receipt_long, 'Debt', onTap: () {}),
-                _buildMenuIcon(Icons.payment, 'Payment', onTap: () {}),
-                _buildMenuIcon(Icons.notifications_active, 'Reminder', onTap: () {}),
+                _buildMenuIcon(Icons.receipt_long, 'Piutang', onTap: () {}),
+                _buildMenuIcon(Icons.payment, 'Pembayaran', onTap: () {}),
+                _buildMenuIcon(Icons.notifications_active, 'Pengingat', onTap: () {}),
                 Consumer(
                   builder: (context, ref, _) {
                     final chatList = ref.watch(chatListStreamProvider).value ?? [];
@@ -128,7 +128,7 @@ class DashboardPage extends ConsumerWidget {
                     return Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        _buildMenuIcon(Icons.chat, 'Chat', onTap: () => context.push(RoutePaths.chatList)),
+                        _buildMenuIcon(Icons.chat, 'Pesan', onTap: () => context.push(RoutePaths.chatList)),
                         if (totalUnread > 0)
                           Positioned(
                             top: -4,
@@ -154,7 +154,7 @@ class DashboardPage extends ConsumerWidget {
             const SizedBox(height: AppDimensions.spacing32),
 
             // Next Due & Recent Transactions
-            Text('Recent & Next Due', style: AppTextStyles.headingMedium),
+            Text('Transaksi Terakhir', style: AppTextStyles.headingMedium),
             const SizedBox(height: AppDimensions.spacing16),
             ...state.transactions.map((txn) {
               return Padding(

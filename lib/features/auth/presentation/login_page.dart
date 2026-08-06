@@ -48,7 +48,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       if (!isEmail) {
         AppSnackbar.warning(
           context,
-          'Phone number login is not fully activated yet. Please use email.',
+          'Login menggunakan nomor telepon belum diaktifkan. Silakan gunakan email.',
         );
         return;
       }
@@ -120,13 +120,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                     // Title
                     Text(
-                      'Welcome Back',
+                      'Selamat Datang',
                       style: AppTextStyles.displaySmall,
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: AppDimensions.spacing8),
                     Text(
-                      'Sign in to your ArLABS Finance account',
+                      'Masuk ke akun ArLABS Finance Anda',
                       style: AppTextStyles.bodyMedium.copyWith(
                         color: AppColors.textTertiary,
                       ),
@@ -137,14 +137,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     // Identifier (Email/Phone)
                     AppTextField(
                       controller: _identifierController,
-                      label: 'Email or Phone Number',
-                      hint: 'Enter your email or phone',
+                      label: 'Email atau Nomor Telepon',
+                      hint: 'Masukkan email atau nomor telepon Anda',
                       prefixIcon: Icons.person_outline,
                       keyboardType: TextInputType.emailAddress,
                       enabled: !isLoading,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Please enter your email or phone';
+                          return 'Harap masukkan email atau nomor telepon Anda';
                         }
                         return null;
                       },
@@ -154,8 +154,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                     // Password
                     AppTextField(
                       controller: _passwordController,
-                      label: 'Password',
-                      hint: 'Enter your password',
+                      label: 'Kata Sandi',
+                      hint: 'Masukkan kata sandi Anda',
                       prefixIcon: Icons.lock_outline,
                       obscureText: !_isPasswordVisible,
                       enabled: !isLoading,
@@ -174,7 +174,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your password';
+                          return 'Harap masukkan kata sandi Anda';
                         }
                         return null;
                       },
@@ -183,7 +183,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                     // Login Button
                     AppButton(
-                      label: 'Sign In',
+                      label: 'Masuk',
                       onPressed: _onLogin,
                       isLoading: isLoading,
                     ),
@@ -192,7 +192,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
                     // Register hint (As per requirements: Accounts created by owner)
                     Text(
-                      'Don\'t have an account?\nPlease contact your ArLABS representative.',
+                      'Belum punya akun?\nSilakan hubungi perwakilan ArLABS Anda.',
                       style: AppTextStyles.labelMedium.copyWith(
                         color: AppColors.textTertiary,
                       ),

@@ -85,9 +85,9 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.room.ownerName ?? 'Owner', style: AppTextStyles.headingSmall),
+                Text(widget.room.ownerName ?? 'Pemilik', style: AppTextStyles.headingSmall),
                 Text(
-                  isTyping ? 'Typing...' : (isOnline ? 'Online' : 'Offline'),
+                  isTyping ? 'Sedang mengetik...' : (isOnline ? 'Online' : 'Offline'),
                   style: AppTextStyles.caption.copyWith(
                     color: isOnline ? AppColors.successLight : AppColors.textTertiary,
                   ),
@@ -192,7 +192,7 @@ class _ChatRoomPageState extends ConsumerState<ChatRoomPage> {
                 controller: _messageController,
                 style: AppTextStyles.bodyMedium,
                 decoration: InputDecoration(
-                  hintText: 'Type a message...',
+                  hintText: 'Ketik pesan...',
                   hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textTertiary),
                   filled: true,
                   fillColor: AppColors.surfaceElevated,

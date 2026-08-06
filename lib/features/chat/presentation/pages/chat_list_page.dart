@@ -69,7 +69,7 @@ class ChatListPage extends ConsumerWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                room.ownerName ?? 'Owner',
+                                room.ownerName ?? 'Pemilik',
                                 style: AppTextStyles.headingSmall,
                               ),
                               Text(
