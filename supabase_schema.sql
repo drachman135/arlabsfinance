@@ -33,6 +33,22 @@ ON public.client_profiles
 FOR INSERT 
 WITH CHECK (auth.uid() = id);
 
+-- Trigger to automatically create client_profile upon Supabase Auth signup
+CREATE OR REPLACE FUNCTION public.handle_new_user() 
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.client_profiles (id, name, email, status)
+  VALUES (new.id, COALESCE(new.raw_user_meta_data->>'name', 'Klien Baru'), new.email, 'pending');
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Drop trigger if exists so we can safely re-run this script
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 -----------------------------------------------------------
 
 -- 2. Table: chat_rooms
