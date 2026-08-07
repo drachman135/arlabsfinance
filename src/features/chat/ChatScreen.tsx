@@ -43,6 +43,8 @@ export function ChatScreen() {
 
   // Inisialisasi dan load pesan
   useEffect(() => {
+    let activeChannel: any = null;
+
     const initChat = async () => {
       if (!activeClientId) {
         setIsLoading(false);
@@ -55,9 +57,9 @@ export function ChatScreen() {
           .from('chat_rooms')
           .select('id')
           .eq('client_id', activeClientId)
-          .single();
+          .limit(1);
 
-        let currentRoomId = roomData?.id;
+        let currentRoomId = roomData && roomData.length > 0 ? roomData[0].id : null;
 
         // Jika room belum ada, buat baru
         if (!currentRoomId && NetworkMonitor.isOnline()) {
@@ -105,7 +107,7 @@ export function ChatScreen() {
             }
 
             // 3. Subscribe ke pesan baru (Realtime)
-            const channel = supabase
+            activeChannel = supabase
               .channel(`room_${currentRoomId}`)
               .on('postgres_changes', 
                 { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `room_id=eq.${currentRoomId}` },
@@ -124,25 +126,30 @@ export function ChatScreen() {
                     }
                     const newMsgs = [...prev, payload.new as ChatMessage];
                     OfflineStore.set(CACHE_KEY, newMsgs);
+                    // PENTING: Auto-scroll saat pesan baru dari realtime masuk
+                    setTimeout(scrollToBottom, 100);
                     return newMsgs;
                   });
                 }
               )
               .subscribe();
-
-            return () => {
-              supabase.removeChannel(channel);
-            };
           }
         }
       } catch (err) {
         console.error("Gagal memuat chat:", err);
       } finally {
-        if (isLoading) setIsLoading(false);
+        setIsLoading(false);
       }
     };
 
     initChat();
+
+    // Proper Cleanup
+    return () => {
+      if (activeChannel) {
+        supabase.removeChannel(activeChannel);
+      }
+    };
   }, [activeClientId]);
 
   // Mengirim Pesan
