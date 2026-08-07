@@ -1,4 +1,3 @@
-import { X, CheckCircle2, AlertTriangle, AlertCircle } from 'lucide-react';
 
 interface ModalProps {
   isOpen: boolean;
