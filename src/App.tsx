@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { PushNotificationService } from './core/notifications/PushNotificationService';
 import { NetworkMonitor } from './core/offline/NetworkMonitor';
 import { SyncQueue } from './core/offline/SyncQueue';
 import { useLicense } from './core/license/useLicense';
@@ -24,6 +25,12 @@ const ProtectedLicenseRoute = ({ children }: { children: React.ReactNode }) => {
       setShowModal(true);
     }
   }, [validationMessage]);
+
+  useEffect(() => {
+    if (isLicenseActive) {
+      PushNotificationService.initialize();
+    }
+  }, [isLicenseActive]);
 
   if (isValidating) {
     return (

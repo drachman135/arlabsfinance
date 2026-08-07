@@ -7,6 +7,9 @@ import { OfflineStore } from '../../core/offline/OfflineStore';
 import { SyncQueue } from '../../core/offline/SyncQueue';
 import { NetworkMonitor } from '../../core/offline/NetworkMonitor';
 
+// Track initialization across strict-mode remounts
+let globalInitializingFlag: string | null = null;
+
 interface ChatMessage {
   id: string;
   sender_type: 'CLIENT' | 'OWNER';
@@ -43,6 +46,10 @@ export function ChatScreen() {
 
   // Inisialisasi dan load pesan
   useEffect(() => {
+    // Mencegah React Strict Mode memanggil fungsi ini dua kali bersamaan yang menyebabkan duplikasi room
+    if (globalInitializingFlag === activeClientId) return;
+    globalInitializingFlag = activeClientId || null;
+
     let activeChannel: any = null;
 
     const initChat = async () => {

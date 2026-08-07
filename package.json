@@ -13,6 +13,7 @@
     "@capacitor/app": "^8.1.1",
     "@capacitor/core": "^8.5.0",
     "@capacitor/network": "^8.0.1",
+    "@capacitor/push-notifications": "^8.1.2",
     "@fingerprintjs/fingerprintjs": "^5.2.0",
     "@supabase/supabase-js": "^2.112.2",
     "@tailwindcss/vite": "^4.3.3",
