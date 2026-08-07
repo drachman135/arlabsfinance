@@ -24,54 +24,82 @@ serve(async (req) => {
     const payload = await req.json();
     const { room_id, sender_type, message } = payload.record;
 
-    // Abaikan jika yang mengirim pesan adalah CLIENT (kita hanya kirim notifikasi ke klien jika OWNER yang balas)
-    if (sender_type === 'CLIENT') {
-      return new Response("Notifikasi diabaikan: Pengirim bukan Owner", { status: 200 });
-    }
-
     // Inisialisasi Supabase
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Cari client_id berdasarkan room_id
-    const { data: roomData } = await supabase.from('chat_rooms').select('client_id').eq('id', room_id).single();
-    if (!roomData) return new Response("Room tidak ditemukan", { status: 404 });
-
-    // Cari fcm_token klien dari tabel licenses
-    const { data: licenseData } = await supabase.from('licenses').select('fcm_token').eq('license_key', roomData.client_id).single();
-    const fcmToken = licenseData?.fcm_token;
-    if (!fcmToken) return new Response("Klien belum punya FCM Token", { status: 200 });
-
-    // Dapatkan Access Token & Kirim ke Firebase
+    // Dapatkan Access Token Firebase
     const accessToken = await getFirebaseAccessToken();
     const fcmUrl = `https://fcm.googleapis.com/v1/projects/${serviceAccount.project_id}/messages:send`;
 
-    const fcmPayload = {
-      message: {
-        token: fcmToken,
-        notification: {
-          title: "Pesan Baru",
-          body: message,
+    // Skenario A: Owner membalas pesan, kirim notifikasi ke Klien
+    if (sender_type === 'OWNER') {
+      const { data: roomData } = await supabase.from('chat_rooms').select('client_id').eq('id', room_id).single();
+      if (!roomData) return new Response("Room tidak ditemukan", { status: 404 });
+
+      const { data: licenseData } = await supabase.from('licenses').select('fcm_token').eq('license_key', roomData.client_id).single();
+      const clientFcmToken = licenseData?.fcm_token;
+
+      if (!clientFcmToken) return new Response("Klien belum punya FCM Token", { status: 200 });
+
+      const fcmPayload = {
+        message: {
+          token: clientFcmToken,
+          notification: { title: "Pesan Baru dari Owner", body: message },
+          data: { route: "/chat" }
+        }
+      };
+
+      await fetch(fcmUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
         },
-        data: {
-          route: "/chat" // Akan membuat klien pindah ke halaman chat saat notif ditekan
+        body: JSON.stringify(fcmPayload)
+      });
+
+      return new Response(JSON.stringify({ status: "Sent to Client" }), { headers: { "Content-Type": "application/json" } });
+    }
+
+    // Skenario B: Klien mengirim pesan, kirim notifikasi ke SEMUA HP Owner
+    if (sender_type === 'CLIENT') {
+      const { data: adminTokens } = await supabase.from('admin_tokens').select('fcm_token');
+      
+      if (!adminTokens || adminTokens.length === 0) {
+        return new Response("Belum ada token Admin yang terdaftar", { status: 200 });
+      }
+
+      let sentCount = 0;
+      for (const admin of adminTokens) {
+        if (admin.fcm_token) {
+          const fcmPayload = {
+            message: {
+              token: admin.fcm_token,
+              notification: { title: "Pesan Baru dari Klien", body: message },
+              data: { route: "/chat", room_id: room_id }
+            }
+          };
+
+          await fetch(fcmUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify(fcmPayload)
+          });
+          sentCount++;
         }
       }
-    };
 
-    const response = await fetch(fcmUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`
-      },
-      body: JSON.stringify(fcmPayload)
-    });
+      return new Response(JSON.stringify({ status: `Sent to ${sentCount} Admins` }), { headers: { "Content-Type": "application/json" } });
+    }
 
-    const result = await response.json();
-    return new Response(JSON.stringify(result), { headers: { "Content-Type": "application/json" } });
+    return new Response("Unknown sender type", { status: 200 });
+
   } catch (error) {
     console.error("Error:", error);
     return new Response(String(error), { status: 500 });
