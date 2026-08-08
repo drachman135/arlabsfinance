@@ -5,7 +5,8 @@ import {
   CheckCircle2, 
   AlertCircle,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Download
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { App as CapacitorApp } from '@capacitor/app';
@@ -47,6 +48,10 @@ export function DashboardScreen() {
   const [isManagingSession, setIsManagingSession] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  
+  const [showDownloadConfirm, setShowDownloadConfirm] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(0);
 
   useEffect(() => {
     // Ambil data klien dari lisensi yang tersimpan
@@ -249,6 +254,64 @@ export function DashboardScreen() {
     CapacitorApp.exitApp();
   };
 
+  const executeDownload = async () => {
+    setIsDownloading(true);
+    setDownloadProgress(0);
+    const url = "https://arlabs-apk-uploader.ardevlabs.workers.dev/upload?filename=CatatanWarungMuchsin%5B1%5D.apk";
+    
+    try {
+      const response = await fetch(url);
+      
+      if (!response.ok) throw new Error("Gagal mengunduh file");
+
+      const contentLength = response.headers.get('content-length');
+      const total = contentLength ? parseInt(contentLength, 10) : 0;
+      let loaded = 0;
+
+      const reader = response.body?.getReader();
+      const chunks = [];
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+          loaded += value.length;
+          if (total) {
+            setDownloadProgress(Math.round((loaded / total) * 100));
+          } else {
+             setDownloadProgress(p => Math.min(p + 10, 90));
+          }
+        }
+      }
+
+      setDownloadProgress(100);
+
+      const blob = new Blob(chunks, { type: 'application/vnd.android.package-archive' });
+      const blobUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = 'CatatanWarungMuchsin.apk';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(blobUrl);
+      document.body.removeChild(a);
+
+      setTimeout(() => {
+        setIsDownloading(false);
+        setShowDownloadConfirm(false);
+        setDownloadProgress(0);
+      }, 500);
+
+    } catch (error) {
+      console.error("Gagal menggunakan fetch, menggunakan fallback langsung:", error);
+      window.location.href = url;
+      setIsDownloading(false);
+      setShowDownloadConfirm(false);
+      setDownloadProgress(0);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
@@ -291,7 +354,7 @@ export function DashboardScreen() {
 
         {/* Quick Menu */}
         <h3 className="text-lg font-bold text-slate-800 mb-4">Menu Cepat</h3>
-        <div className="grid grid-cols-2 gap-4 mb-8 max-w-[240px]">
+        <div className="grid grid-cols-3 gap-4 mb-8 max-w-[320px]">
           
           <button 
             className="flex flex-col items-center group"
@@ -316,6 +379,16 @@ export function DashboardScreen() {
               )}
             </div>
             <span className="text-xs font-medium text-slate-600">Pesan</span>
+          </button>
+
+          <button 
+            onClick={() => setShowDownloadConfirm(true)}
+            className="flex flex-col items-center group relative cursor-pointer"
+          >
+            <div className="w-14 h-14 bg-white border border-slate-100 rounded-2xl flex items-center justify-center mb-2 shadow-sm group-hover:border-blue-200 group-hover:bg-blue-50 transition-colors">
+              <Download className="w-6 h-6 text-blue-600" />
+            </div>
+            <span className="text-xs font-medium text-slate-600 text-center">Unduh<br/>Aplikasi</span>
           </button>
 
         </div>
@@ -395,6 +468,72 @@ export function DashboardScreen() {
         onConfirm={() => handleManageSession('APPROVE', pendingSession?.id)}
         onCancel={() => handleManageSession('REJECT', pendingSession?.id)}
       />
+
+      {/* Modern Bottom Sheet Download Dialog */}
+      {showDownloadConfirm && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300"
+            onClick={isDownloading ? undefined : () => setShowDownloadConfirm(false)}
+          />
+          
+          {/* Sheet */}
+          <div className="relative w-full max-w-md mx-auto bg-white rounded-t-[32px] shadow-2xl p-6 pb-10 animate-in slide-in-from-bottom-full duration-300 ease-out">
+            {/* Drag Handle (Cosmetic) */}
+            <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-6"></div>
+            
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-14 h-14 bg-blue-50 border border-blue-100 rounded-2xl flex items-center justify-center shrink-0">
+                <Download className="w-7 h-7 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-slate-800">Unduh Aplikasi</h3>
+                <p className="text-sm font-medium text-slate-500">CatatanWarungMuchsin.apk</p>
+              </div>
+            </div>
+
+            {isDownloading ? (
+              <div className="space-y-3 mb-4">
+                <div className="flex justify-between items-end mb-1">
+                  <span className="text-sm font-bold text-blue-600">Mengunduh...</span>
+                  <span className="text-xl font-black text-slate-800">{downloadProgress}%</span>
+                </div>
+                <div className="w-full bg-slate-100 rounded-full h-4 overflow-hidden shadow-inner">
+                  <div 
+                    className="bg-gradient-to-r from-blue-500 to-blue-600 h-4 rounded-full transition-all duration-300 ease-out relative overflow-hidden"
+                    style={{ width: `${downloadProgress}%` }}
+                  >
+                    <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-slate-600 mb-8 leading-relaxed">
+                Anda akan mengunduh file instalasi Android (APK). Pastikan perangkat Anda mengizinkan instalasi dari sumber yang tidak dikenal.
+              </p>
+            )}
+
+            {!isDownloading && (
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setShowDownloadConfirm(false)}
+                  className="flex-1 py-3.5 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors"
+                >
+                  Nanti Saja
+                </button>
+                <button 
+                  onClick={executeDownload}
+                  className="flex-1 py-3.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 transition-colors flex justify-center items-center gap-2"
+                >
+                  <Download className="w-5 h-5" />
+                  Mulai Unduh
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
 
     </PullToRefresh>
