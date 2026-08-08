@@ -13,6 +13,7 @@ import { Modal } from '../../components/ui/Modal';
 import { LicenseService } from '../../core/license/LicenseService';
 import { supabase } from '../../core/supabase';
 import { PullToRefresh } from '../../components/ui/PullToRefresh';
+import { LogOut } from 'lucide-react';
 
 interface Transaction {
   id: string;
@@ -20,7 +21,10 @@ interface Transaction {
   type: 'payment' | 'invoice';
   status: string;
   amount: number;
+  date: string;
 }
+
+
 
 
 
@@ -38,6 +42,11 @@ export function DashboardScreen() {
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [unreadChat, setUnreadChat] = useState(0);
+
+  const [pendingSession, setPendingSession] = useState<any>(null);
+  const [isManagingSession, setIsManagingSession] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     // Ambil data klien dari lisensi yang tersimpan
@@ -114,10 +123,11 @@ export function DashboardScreen() {
       }
 
       // 2c. Ambil Riwayat Transaksi Terakhir (Kasbon Ledger)
+      const actualLicenseKey = savedLicense?.license_key?.trim() || '';
       const { data: txData } = await supabase
         .from('kasbon_ledger')
         .select('id, description, type, amount, transaction_date')
-        .eq('client_id', activeClientId)
+        .or(`client_id.eq.${activeClientId},client_id.eq.${actualLicenseKey}`)
         .order('transaction_date', { ascending: false })
         .limit(5);
 
@@ -127,7 +137,8 @@ export function DashboardScreen() {
           title: item.description || (item.type === 'DEBT' ? 'Penambahan Kasbon' : 'Pembayaran Kasbon'),
           type: item.type === 'DEBT' ? 'invoice' : 'payment',
           status: item.type === 'PAYMENT' ? 'LUNAS' : 'KASBON',
-          amount: item.amount
+          amount: item.amount,
+          date: item.transaction_date
         }));
         newData.transactions = formattedTx;
         setTransactions(formattedTx as unknown as Transaction[]);
@@ -162,8 +173,9 @@ export function DashboardScreen() {
     fetchDashboardData(true);
 
     const savedLicense = LicenseService.getLicenseLocally();
-    const activeClientId = clientId || (savedLicense ? savedLicense.license_key : null);
-    if (!activeClientId) return;
+    const activeClientId = clientId || (savedLicense ? savedLicense.license_key?.trim() : null);
+    const licenseKey = savedLicense ? savedLicense.license_key?.trim() : null;
+    if (!activeClientId || !licenseKey) return;
 
     // Setup Realtime Subscriptions for background updates
     const dashboardChannel = supabase.channel(`dashboard_updates_${activeClientId}`)
@@ -173,12 +185,59 @@ export function DashboardScreen() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_rooms', filter: `client_id=eq.${activeClientId}` }, () => {
          fetchDashboardData(false);
       })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'license_sessions', filter: `license_key=eq.${licenseKey}` }, (payload) => {
+         if (payload.new.status === 'PENDING') {
+           setPendingSession(payload.new);
+         }
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'license_sessions', filter: `license_key=eq.${licenseKey}` }, (payload) => {
+         if (payload.new.status === 'PENDING') {
+           setPendingSession(payload.new);
+         } else if (payload.new.status === 'ACTIVE' || payload.new.status === 'REJECTED') {
+           setPendingSession(null);
+         }
+      })
       .subscribe();
 
     return () => {
       supabase.removeChannel(dashboardChannel);
     };
   }, [clientId, fetchDashboardData]);
+
+  const handleManageSession = async (action: 'APPROVE' | 'REJECT' | 'REVOKE', sessionId: string) => {
+    const savedLicense = LicenseService.getLicenseLocally();
+    if (!savedLicense || !savedLicense.license_key) return;
+
+    setIsManagingSession(true);
+    const res = await LicenseService.manageSession(action, sessionId, savedLicense.license_key);
+    setIsManagingSession(false);
+    
+    if (res.success) {
+      if (action === 'APPROVE' || action === 'REJECT') {
+        setPendingSession(null);
+      }
+    } else {
+      alert(res.message);
+    }
+  };
+
+
+
+  const handleGlobalLogoutClick = () => {
+    setShowLogoutModal(true);
+  };
+
+  const executeLogout = async () => {
+    setIsLoggingOut(true);
+    const savedLicense = LicenseService.getLicenseLocally();
+    if (savedLicense?.session_id && savedLicense?.license_key) {
+      // Beri tahu server untuk menghapus sesi ini agar slotnya kosong
+      await LicenseService.manageSession('REVOKE', savedLicense.session_id, savedLicense.license_key);
+    }
+    
+    LicenseService.clearLicense();
+    window.location.href = '/'; // redirect ke halaman utama/aktivasi
+  };
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
@@ -217,6 +276,13 @@ export function DashboardScreen() {
               title="Refresh Data"
             >
               <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </button>
+            <button 
+              onClick={handleGlobalLogoutClick}
+              className="p-2 bg-red-100 text-red-600 rounded-full hover:bg-red-200 transition-colors"
+              title="Logout"
+            >
+              <LogOut className="w-5 h-5 ml-0.5" />
             </button>
           </div>
         </header>
@@ -272,11 +338,16 @@ export function DashboardScreen() {
 
               <div className="flex-1">
                 <h4 className="text-sm font-bold text-slate-800 mb-0.5">{txn.title}</h4>
-                <p className={`text-[10px] font-bold tracking-wider uppercase ${
-                  txn.status === 'LUNAS' ? 'text-green-500' : 'text-orange-500'
-                }`}>
-                  {txn.status}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className={`text-[10px] font-bold tracking-wider uppercase ${
+                    txn.status === 'LUNAS' ? 'text-green-500' : 'text-orange-500'
+                  }`}>
+                    {txn.status}
+                  </p>
+                  <span className="text-[10px] text-slate-400 font-medium">
+                    {new Date(txn.date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short' })} • {new Date(txn.date).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
               </div>
 
               <div className="text-right ml-2">
@@ -300,6 +371,32 @@ export function DashboardScreen() {
         onConfirm={executeExit}
         onCancel={() => setShowExitModal(false)}
       />
+
+      {/* Logout Modal */}
+      <Modal
+        isOpen={showLogoutModal}
+        title="Konfirmasi Logout"
+        message="Apakah Anda yakin ingin logout dari perangkat ini?"
+        type="confirm"
+        confirmText={isLoggingOut ? "Memproses..." : "Ya, Logout"}
+        cancelText="Batal"
+        onConfirm={executeLogout}
+        onCancel={() => setShowLogoutModal(false)}
+      />
+
+      {/* Pending Session Modal */}
+      <Modal
+        isOpen={!!pendingSession}
+        title="Permintaan Login Baru"
+        message={`Perangkat baru (${pendingSession?.device_info}) sedang mencoba untuk login menggunakan lisensi Anda. Izinkan?`}
+        type="confirm"
+        confirmText={isManagingSession ? "Memproses..." : "Izinkan"}
+        cancelText={isManagingSession ? "Tunggu..." : "Tolak"}
+        onConfirm={() => handleManageSession('APPROVE', pendingSession?.id)}
+        onCancel={() => handleManageSession('REJECT', pendingSession?.id)}
+      />
+
+
     </PullToRefresh>
   );
 }

@@ -1,3 +1,4 @@
+import React from 'react';
 
 interface ModalProps {
   isOpen: boolean;
@@ -8,6 +9,7 @@ interface ModalProps {
   cancelText?: string;
   onConfirm: () => void;
   onCancel?: () => void;
+  children?: React.ReactNode;
 }
 
 export function Modal({ 
@@ -18,7 +20,8 @@ export function Modal({
   confirmText = 'OK',
   cancelText = 'Batal',
   onConfirm,
-  onCancel
+  onCancel,
+  children
 }: ModalProps) {
   if (!isOpen) return null;
 
@@ -27,7 +30,13 @@ export function Modal({
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
         <div className="p-6 text-center">
           <h3 className="text-xl font-bold text-slate-800 mb-2">{title}</h3>
-          <p className="text-slate-500 mb-6">{message}</p>
+          {message && <p className="text-slate-500 mb-6">{message}</p>}
+          
+          {children && (
+            <div className="mb-6 text-left">
+              {children}
+            </div>
+          )}
           
           <div className="flex gap-3 justify-center">
             {type === 'confirm' && (

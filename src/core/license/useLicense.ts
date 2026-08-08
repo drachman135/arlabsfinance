@@ -34,12 +34,57 @@ export function useLicense() {
           setLicenseData(null);
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'license_sessions',
+          filter: `license_key=eq.${licenseData.license_key}`
+        },
+        (payload) => {
+          if (payload.new.status === 'REVOKE' && payload.new.id === licenseData.session_id) {
+            console.warn('Session was revoked by another device.');
+            LicenseService.clearLicense();
+            setValidationMessage("Sesi Anda telah diambil alih oleh perangkat lain.");
+            setIsLicenseActive(false);
+            setLicenseData(null);
+          }
+        }
+      )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [isLicenseActive, licenseData?.license_key]);
+  }, [isLicenseActive, licenseData?.license_key, licenseData?.session_id]);
+
+  // Bulletproof Polling Fallback (Cek status tiap 5 detik)
+  useEffect(() => {
+    if (!isLicenseActive || !licenseData?.session_id) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const { data: sessionData, error: sessionError } = await supabase
+          .from('license_sessions')
+          .select('status')
+          .eq('id', licenseData.session_id)
+          .single();
+          
+        if (!sessionError && sessionData && sessionData.status === 'REVOKE') {
+          console.warn('Session revoked detected via polling');
+          LicenseService.clearLicense();
+          setValidationMessage("Sesi Anda telah diambil alih oleh perangkat lain.");
+          setIsLicenseActive(false);
+          setLicenseData(null);
+        }
+      } catch (e) {
+        // Abaikan error jaringan
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [isLicenseActive, licenseData?.session_id]);
 
   const checkLicense = async () => {
     setIsValidating(true);
@@ -60,6 +105,27 @@ export function useLicense() {
         setIsLicenseActive(false);
         setLicenseData(data);
         return;
+      }
+
+      // Verifikasi sesi di backend jika online
+      if (data.session_id) {
+        try {
+          const { data: sessionData, error: sessionError } = await supabase
+            .from('license_sessions')
+            .select('status')
+            .eq('id', data.session_id)
+            .single();
+            
+          if (!sessionError && sessionData && sessionData.status === 'REVOKE') {
+            setValidationMessage("Sesi Anda telah diambil alih oleh perangkat lain.");
+            LicenseService.clearLicense();
+            setIsLicenseActive(false);
+            setLicenseData(null);
+            return;
+          }
+        } catch (e) {
+           // Abaikan error jaringan, anggap masih aktif
+        }
       }
 
       // Validasi Expiration Date dengan Anti-Tamper Time

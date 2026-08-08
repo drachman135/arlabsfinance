@@ -11,6 +11,7 @@ import { LoginScreen } from './features/auth/LoginScreen';
 import { DashboardScreen } from './features/dashboard/DashboardScreen';
 import { ChatScreen } from './features/chat/ChatScreen';
 import { InvoicesScreen } from './features/invoices/InvoicesScreen';
+import { CustomSplashScreen } from './components/ui/CustomSplashScreen';
 
 /**
  * Route Wrapper untuk mengecek lisensi
@@ -19,6 +20,7 @@ const ProtectedLicenseRoute = ({ children }: { children: React.ReactNode }) => {
   const { isValidating, isLicenseActive, validationMessage } = useLicense();
   const location = useLocation();
   const [showModal, setShowModal] = useState(false);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
 
   useEffect(() => {
     if (validationMessage) {
@@ -32,6 +34,13 @@ const ProtectedLicenseRoute = ({ children }: { children: React.ReactNode }) => {
     }
   }, [isLicenseActive]);
 
+  const handleModalClose = () => {
+    setShowModal(false);
+    if (!isLicenseActive) {
+      setShouldRedirect(true);
+    }
+  };
+
   if (isValidating) {
     return (
       <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center">
@@ -41,18 +50,22 @@ const ProtectedLicenseRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  if (!isLicenseActive) {
+  if (shouldRedirect || (!isLicenseActive && !validationMessage)) {
+    return <Navigate to="/activation" state={{ from: location }} replace />;
+  }
+
+  if (!isLicenseActive && validationMessage) {
     return (
-      <>
-        <Navigate to="/activation" state={{ from: location }} replace />
+      <div className="min-h-screen bg-slate-50">
         <Modal 
           isOpen={showModal}
-          title="Lisensi Bermasalah"
-          message={validationMessage || ''}
+          title="Sesi Berakhir"
+          message={validationMessage}
           type="alert"
-          onConfirm={() => setShowModal(false)}
+          confirmText="Tutup"
+          onConfirm={handleModalClose}
         />
-      </>
+      </div>
     );
   }
 
@@ -64,6 +77,8 @@ const ProtectedLicenseRoute = ({ children }: { children: React.ReactNode }) => {
  * Main App Component
  */
 function App() {
+  const [showSplash, setShowSplash] = useState(true);
+
   useEffect(() => {
     const unsubscribe = NetworkMonitor.addListener((status) => {
       if (status.connected) {
@@ -76,6 +91,10 @@ function App() {
       unsubscribe();
     };
   }, []);
+
+  if (showSplash) {
+    return <CustomSplashScreen onFinish={() => setShowSplash(false)} />;
+  }
 
   return (
     <BrowserRouter>

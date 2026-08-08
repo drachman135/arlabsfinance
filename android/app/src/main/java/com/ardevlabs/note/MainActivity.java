@@ -1,4 +1,4 @@
-package com.arlabs.financeclient;
+package com.ardevlabs.note;
 
 import com.getcapacitor.BridgeActivity;
 

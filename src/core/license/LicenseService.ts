@@ -7,12 +7,13 @@ const ENCRYPTION_KEY = import.meta.env.VITE_ENCRYPTION_KEY || 'arlabs-finance-se
 const STORAGE_KEY = 'secure_license_prefs';
 
 export interface LicenseData {
-  status: 'ACTIVE' | 'NOT_ACTIVATED' | 'EXPIRED';
+  status: 'ACTIVE' | 'NOT_ACTIVATED' | 'EXPIRED' | 'REQUIRES_CONFIRMATION';
   license_type: string;
   expiration_date: string | null;
   client_id?: string;
   client_name?: string;
   license_key?: string;
+  session_id?: string;
 }
 
 export class LicenseService {
@@ -88,6 +89,11 @@ export class LicenseService {
     static async activateLicense(licenseKey: string): Promise<{ success: boolean; data?: any; message: string }> {
     try {
       const deviceId = await this.getDeviceId();
+      // Tambahkan info device yang simple
+      const userAgent = navigator.userAgent;
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+      const deviceInfo = isMobile ? 'Mobile App/Browser' : 'Desktop Browser';
+      
       // Menggunakan nama paket asli agar sesuai dengan pengecekan Edge Function bawaan Anda
       const packageName = 'com.ardevlabs.finance'; 
       
@@ -114,6 +120,7 @@ export class LicenseService {
         body: JSON.stringify({
           license_key: formattedKey,
           device_id: deviceId,
+          device_info: deviceInfo,
           package_name: packageName
         })
       });
@@ -122,6 +129,11 @@ export class LicenseService {
       console.log("Response dari Server:", result);
       
       if (response.ok && result.success) {
+        // Jika butuh konfirmasi
+        if (result.status === 'REQUIRES_CONFIRMATION') {
+          return { success: true, message: result.message, data: { ...result, license_key: licenseKey } };
+        }
+
         // Berhasil dari server. Gunakan fallback 'ACTIVE' jika backend lupa mengirim field status
         const finalStatus = result.status || result.Status || 'ACTIVE';
 
@@ -131,7 +143,8 @@ export class LicenseService {
           expiration_date: result.expiration_date || result.ExpirationDate || null,
           client_id: result.client_id || result.ClientId || null, // Menyimpan ID Klien
           client_name: result.client_name || result.ClientName || 'Klien ArLABS', // Menyimpan nama klien jika ada
-          license_key: licenseKey // Simpan kunci lisensi asli
+          license_key: formattedKey, // Simpan kunci lisensi asli (yang sudah di-trim)
+          session_id: result.session_id // Simpan session id
         });
         return { success: true, message: result.message, data: result };
       } else {
@@ -140,6 +153,35 @@ export class LicenseService {
     } catch (error: any) {
       console.error("Activation Error:", error);
       return { success: false, message: error.message || 'Kesalahan koneksi ke server atau Fingerprint diblokir' };
+    }
+  }
+
+  /**
+   * Mengelola Sesi (Approve, Reject, Revoke)
+   */
+  static async manageSession(action: 'APPROVE' | 'REJECT' | 'REVOKE', sessionId: string, licenseKey: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+
+      const response = await fetch(`${supabaseUrl}/functions/v1/manage-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseAnonKey}`
+        },
+        body: JSON.stringify({
+          action,
+          session_id: sessionId,
+          license_key: licenseKey
+        })
+      });
+
+      const result = await response.json();
+      return { success: result.success, message: result.message };
+    } catch (error: any) {
+      console.error("Manage Session Error:", error);
+      return { success: false, message: error.message || 'Kesalahan koneksi' };
     }
   }
 }

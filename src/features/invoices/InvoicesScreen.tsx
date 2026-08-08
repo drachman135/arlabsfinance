@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ArrowLeft, Loader2, BookOpen, PlusCircle, MinusCircle, Wallet, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Loader2, BookOpen, Wallet, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../core/supabase';
 import { LicenseService } from '../../core/license/LicenseService';
-import { PullToRefresh } from '../../components/ui/PullToRefresh';
 
 import { OfflineStore } from '../../core/offline/OfflineStore';
 
@@ -77,8 +76,7 @@ export function InvoicesScreen() {
   const outstanding = totalDebt - totalPaid;
 
   return (
-    <PullToRefresh onRefresh={handleManualRefresh}>
-      <div className="flex flex-col h-screen bg-slate-50 w-full max-w-md mx-auto shadow-xl overflow-hidden relative pb-20">
+      <div className="flex flex-col h-screen bg-slate-50 w-full max-w-md mx-auto shadow-xl overflow-hidden relative">
         {/* Header */}
         <div className="bg-white px-4 py-4 flex items-center justify-between border-b border-slate-100 shadow-sm z-10 sticky top-0">
           <div className="flex items-center gap-4">
@@ -103,9 +101,9 @@ export function InvoicesScreen() {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4">
-          {/* Ringkasan Saldo */}
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl p-6 shadow-xl mb-8 text-white relative overflow-hidden">
+        {/* Ringkasan Saldo (Sticky) */}
+        <div className="p-4 bg-slate-50 z-10 shrink-0">
+          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl p-6 shadow-xl text-white relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-bl-full pointer-events-none"></div>
             
             <div className="flex items-center gap-2 mb-2">
@@ -128,7 +126,9 @@ export function InvoicesScreen() {
               </div>
             </div>
           </div>
+        </div>
 
+        <div className="flex-1 overflow-y-auto px-4 pb-4">
           <h2 className="font-bold text-slate-700 mb-4 px-1">Riwayat Transaksi</h2>
           
           {isLoading ? (
@@ -141,36 +141,45 @@ export function InvoicesScreen() {
               <p className="text-sm font-medium">Buku kasbon masih kosong.</p>
             </div>
           ) : (
-            <div className="relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent pl-8 mb-10 space-y-6">
+            <div className="mb-10 space-y-3">
               
               {ledger.map((entry) => {
                 const isDebt = entry.type === 'DEBT';
                 
                 return (
                   <div key={entry.id} className="relative flex items-center justify-between group">
-                    {/* Dot/Icon di Garis Timeline */}
-                    <div className={`absolute -left-[39px] w-7 h-7 rounded-full flex items-center justify-center border-2 border-white shadow-sm z-10 
-                      ${isDebt ? 'bg-red-100 text-red-500' : 'bg-green-100 text-green-500'}`}
-                    >
-                      {isDebt ? <PlusCircle className="w-4 h-4" /> : <MinusCircle className="w-4 h-4" />}
-                    </div>
-
                     <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 w-full hover:shadow-md transition-shadow">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-bold text-slate-800 text-sm leading-tight pr-4">
-                          {entry.description}
-                        </h4>
-                        <p className={`font-bold whitespace-nowrap text-sm ${isDebt ? 'text-red-500' : 'text-green-500'}`}>
-                          {isDebt ? '+' : '-'} Rp {Number(entry.amount || 0).toLocaleString('id-ID')}
-                        </p>
-                      </div>
-                      
-                      <p className="text-[11px] text-slate-400 font-medium">
-                        {new Date(entry.transaction_date).toLocaleDateString('id-ID', { 
-                          day: 'numeric', month: 'short', year: 'numeric',
-                          hour: '2-digit', minute: '2-digit'
-                        })}
-                      </p>
+                      {entry.description && entry.description.trim() !== '' ? (
+                        <>
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="font-bold text-slate-800 text-sm leading-tight pr-4">
+                              {entry.description}
+                            </h4>
+                            <p className={`font-bold whitespace-nowrap text-sm ${isDebt ? 'text-red-500' : 'text-green-500'}`}>
+                              {isDebt ? '+' : '-'} Rp {Number(entry.amount || 0).toLocaleString('id-ID')}
+                            </p>
+                          </div>
+                          
+                          <p className="text-[11px] text-slate-400 font-medium">
+                            {new Date(entry.transaction_date).toLocaleDateString('id-ID', { 
+                              day: 'numeric', month: 'short', year: 'numeric',
+                              hour: '2-digit', minute: '2-digit'
+                            })}
+                          </p>
+                        </>
+                      ) : (
+                        <div className="flex justify-between items-center">
+                          <p className="text-[11px] text-slate-400 font-medium">
+                            {new Date(entry.transaction_date).toLocaleDateString('id-ID', { 
+                              day: 'numeric', month: 'short', year: 'numeric',
+                              hour: '2-digit', minute: '2-digit'
+                            })}
+                          </p>
+                          <p className={`font-bold whitespace-nowrap text-sm ${isDebt ? 'text-red-500' : 'text-green-500'}`}>
+                            {isDebt ? '+' : '-'} Rp {Number(entry.amount || 0).toLocaleString('id-ID')}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
@@ -179,6 +188,5 @@ export function InvoicesScreen() {
           )}
         </div>
       </div>
-    </PullToRefresh>
   );
 }

@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "715038737081",
+    "firebase_url": "https://admin-keuangan-135-default-rtdb.firebaseio.com",
+    "project_id": "admin-keuangan-135",
+    "storage_bucket": "admin-keuangan-135.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:715038737081:android:bf86210ed2292972281168",
+        "android_client_info": {
+          "package_name": "com.adminkeuangan"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCyf3ZRoLLTgcWzalmrBOLQ30a_qNFEicg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:715038737081:android:e20cad701d7775df281168",
+        "android_client_info": {
+          "package_name": "com.ardevlabs.note"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCyf3ZRoLLTgcWzalmrBOLQ30a_qNFEicg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

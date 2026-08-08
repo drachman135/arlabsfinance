@@ -7,8 +7,6 @@ import { OfflineStore } from '../../core/offline/OfflineStore';
 import { SyncQueue } from '../../core/offline/SyncQueue';
 import { NetworkMonitor } from '../../core/offline/NetworkMonitor';
 
-// Track initialization across strict-mode remounts
-let globalInitializingFlag: string | null = null;
 
 interface ChatMessage {
   id: string;
@@ -46,9 +44,7 @@ export function ChatScreen() {
 
   // Inisialisasi dan load pesan
   useEffect(() => {
-    // Mencegah React Strict Mode memanggil fungsi ini dua kali bersamaan yang menyebabkan duplikasi room
-    if (globalInitializingFlag === activeClientId) return;
-    globalInitializingFlag = activeClientId || null;
+    let mounted = true;
 
     let activeChannel: any = null;
 
@@ -70,6 +66,9 @@ export function ChatScreen() {
 
         // Jika room belum ada, buat baru
         if (!currentRoomId && NetworkMonitor.isOnline()) {
+          // Double check if mounted to avoid Strict Mode double inserts
+          if (!mounted) return;
+          
           const { data: newRoom } = await supabase
             .from('chat_rooms')
             .insert([{ client_id: activeClientId }])
@@ -78,6 +77,8 @@ export function ChatScreen() {
             
           if (newRoom) currentRoomId = newRoom.id;
         }
+
+        if (!mounted) return;
 
         if (currentRoomId) {
           setRoomId(currentRoomId);
@@ -153,6 +154,7 @@ export function ChatScreen() {
 
     // Proper Cleanup
     return () => {
+      mounted = false;
       if (activeChannel) {
         supabase.removeChannel(activeChannel);
       }
